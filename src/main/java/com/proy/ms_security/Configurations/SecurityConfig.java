@@ -34,7 +34,12 @@ public class SecurityConfig {
                                 new AntPathRequestMatcher("/oauth2/**"),
                                 new AntPathRequestMatcher("/"),
                                 new AntPathRequestMatcher("/github/callback"),
-                                new AntPathRequestMatcher("/error")
+                                new AntPathRequestMatcher("/error"),
+                                new AntPathRequestMatcher("/users/**"),
+                                new AntPathRequestMatcher("/sessions/**"),
+                                new AntPathRequestMatcher("/role/**"),
+                                new AntPathRequestMatcher("/profiles/**"),
+                                new AntPathRequestMatcher("/permissions/**")
                         ).permitAll()
                         .anyRequest().authenticated()
                 )
