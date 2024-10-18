@@ -34,6 +34,8 @@ public class Session {
         this.endAt = endAt;
     }
 
+    public Session(){}
+
     public User getUser() {
         return user;
     }

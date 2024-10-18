@@ -20,6 +20,8 @@ public class User {
         this.password = password;
     }
 
+    public User(){}
+
     public String get_id() {
         return _id;
     }
