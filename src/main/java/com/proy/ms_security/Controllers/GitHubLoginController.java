@@ -4,6 +4,7 @@ import com.proy.ms_security.Models.Session;
 import com.proy.ms_security.Models.User;
 import com.proy.ms_security.Repositories.SessionRepository;
 import com.proy.ms_security.Repositories.UserRepository;
+import com.proy.ms_security.Services.JwtService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
@@ -30,47 +31,53 @@ public class GitHubLoginController {
     @Autowired
     private SessionRepository sessionRepository;
 
+    @Autowired
+    private JwtService jwtService;
+
     @GetMapping("/login/github")  // Ruta para redirigir al login de GitHub
     public RedirectView redirectToGitHub() {
         return new RedirectView("/oauth2/authorization/github");
     }
 
-    @GetMapping("/github/callback")  // Ruta que maneja la respuesta de GitHub
+    @GetMapping("/github/callback")
     public ResponseEntity<Map<String, Object>> handleGitHubCallback(OAuth2AuthenticationToken authentication) {
         OAuth2User oAuth2User = authentication.getPrincipal();
         String email = oAuth2User.getAttribute("email");
-        System.out.println(email);String name = oAuth2User.getAttribute("name");
-        System.out.println(name);
+        String name = oAuth2User.getAttribute("name");
 
+
+        /**   Ver la informacion que devuelve el login con GitHub
         oAuth2User.getAttributes().forEach((key, value) -> {
             System.out.println("Key: " + key + ", Value: " + value);
         });
+         */
 
 
-        // Verifica si el usuario ya existe en la base de datos
         User user = this.userRepository.getUserByEmail(email);
         if (user == null) {
-            // Si el usuario no existe, se crea uno nuevo
+
             user = new User();
             user.setEmail(email);
-            user.setName(name); // Establece el nombre del usuario
+            user.setName(name);
             this.userRepository.save(user);
         }
+        //Crea el token con el usaurio
+        String tokenJWT = jwtService.generateToken(user);
 
         // Crea una nueva sesión
         Session session = new Session();
-        session.setToken(UUID.randomUUID().toString());  // Genera un token aleatorio
+        session.setToken(tokenJWT);
         session.setStartAt(LocalDateTime.now());
-        session.setExpiration(LocalDateTime.now().plusHours(1));  // Sesión expira en 1 hora
+        session.setExpiration(LocalDateTime.now().plusHours(1));
         session.setUsado(false);
         session.setFallido(false);
-        session.setUser(user);  // Relación con el usuario
+        session.setUser(user);
         this.sessionRepository.save(session);
 
         // Preparar el JSON de respuesta
         Map<String, Object> response = new HashMap<>();
-        response.put("user", user);  // Información del usuario
-        response.put("session", session);  // Información de la sesión
+        response.put("user", user);
+        response.put("session", session);
 
         // Devolver la respuesta en formato JSON
         return ResponseEntity.ok(response);
