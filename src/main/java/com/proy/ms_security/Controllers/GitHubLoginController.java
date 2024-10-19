@@ -4,7 +4,9 @@ import com.proy.ms_security.Models.Session;
 import com.proy.ms_security.Models.User;
 import com.proy.ms_security.Repositories.SessionRepository;
 import com.proy.ms_security.Repositories.UserRepository;
+import com.proy.ms_security.Services.EncryptionService;
 import com.proy.ms_security.Services.JwtService;
+import com.proy.ms_security.Services.PasswordGeneratorService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
@@ -34,6 +36,12 @@ public class GitHubLoginController {
     @Autowired
     private JwtService jwtService;
 
+    @Autowired
+    private PasswordGeneratorService passwordGeneratorService;
+
+    @Autowired
+    private EncryptionService encryptionService;
+
     @GetMapping("/login/github")  // Ruta para redirigir al login de GitHub
     public RedirectView redirectToGitHub() {
         return new RedirectView("/oauth2/authorization/github");
@@ -59,6 +67,9 @@ public class GitHubLoginController {
             user = new User();
             user.setEmail(email);
             user.setName(name);
+            String password = passwordGeneratorService.generateRandomPassword(12);
+            String encriptada = encryptionService.convertSHA256(password);
+            user.setPassword(encriptada);
             this.userRepository.save(user);
         }
         //Crea el token con el usaurio
@@ -78,6 +89,7 @@ public class GitHubLoginController {
         Map<String, Object> response = new HashMap<>();
         response.put("user", user);
         response.put("session", session);
+
 
         // Devolver la respuesta en formato JSON
         return ResponseEntity.ok(response);
