@@ -40,7 +40,8 @@ public class SecurityConfig {
                                 new AntPathRequestMatcher("/role/**"),
                                 new AntPathRequestMatcher("/profiles/**"),
                                 new AntPathRequestMatcher("/permissions/**"),
-                                new AntPathRequestMatcher("/role-permission/**")
+                                new AntPathRequestMatcher("/role-permission/**"),
+                                new AntPathRequestMatcher("/api/public/security/**")
                         ).permitAll()
                         .anyRequest().authenticated()
                 )
