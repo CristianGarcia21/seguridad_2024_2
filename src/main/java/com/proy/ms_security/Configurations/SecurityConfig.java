@@ -35,12 +35,13 @@ public class SecurityConfig {
                                 new AntPathRequestMatcher("/"),
                                 new AntPathRequestMatcher("/github/callback"),
                                 new AntPathRequestMatcher("/error"),
-                                new AntPathRequestMatcher("/users/**"),
-                                new AntPathRequestMatcher("/sessions/**"),
-                                new AntPathRequestMatcher("/role/**"),
-                                new AntPathRequestMatcher("/profiles/**"),
-                                new AntPathRequestMatcher("/permissions/**"),
-                                new AntPathRequestMatcher("/role-permission/**"),
+                                new AntPathRequestMatcher("/api/users/**"),
+                                new AntPathRequestMatcher("/api/sessions/**"),
+                                new AntPathRequestMatcher("/api/role/**"),
+                                new AntPathRequestMatcher("/api/profiles/**"),
+                                new AntPathRequestMatcher("/api/permissions/**"),
+                                new AntPathRequestMatcher("/api/role-permission/**"),
+                                new AntPathRequestMatcher("/api/user_role/**"),
                                 new AntPathRequestMatcher("/api/public/security/**")
                         ).permitAll()
                         .anyRequest().authenticated()
