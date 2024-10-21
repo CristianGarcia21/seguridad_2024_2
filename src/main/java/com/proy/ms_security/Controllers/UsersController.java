@@ -1,7 +1,9 @@
 package com.proy.ms_security.Controllers;
 
 
+import com.proy.ms_security.Models.Profile;
 import com.proy.ms_security.Models.User;
+import com.proy.ms_security.Repositories.ProfileRepository;
 import com.proy.ms_security.Repositories.UserRepository;
 import com.proy.ms_security.Services.EncryptionService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,6 +20,9 @@ public class UsersController {
 
     @Autowired
     private EncryptionService theEncryptionService;
+
+    @Autowired
+    private ProfileRepository theProfileRepository;
 
     @GetMapping("")
     public List<User> find(){
@@ -55,5 +60,16 @@ public class UsersController {
         if (theUser!=null){
             this.theUserRepository.delete(theUser);
         }
+    }
+    @PostMapping("{userId}/profile/{profileId}")
+    public User matchProfile(@PathVariable String userId, @PathVariable String profileId) {
+        User theUser = this.theUserRepository.findById(userId).orElse(null);
+        Profile theProfile = this.theProfileRepository.findById(profileId).orElse(null);
+
+        if (theUser != null && theProfile != null){
+            theUser.setProfile(theProfile);
+            this.theUserRepository.save(theUser);
+            return theUser;
+        }else return null;
     }
 }
