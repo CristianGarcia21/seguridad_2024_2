@@ -1,14 +1,9 @@
 package com.proy.ms_security.Controllers;
 
-import com.proy.ms_security.Models.Session;
-import com.proy.ms_security.Models.User;
-import com.proy.ms_security.Models.VerificationRequest;
+import com.proy.ms_security.Models.*;
 import com.proy.ms_security.Repositories.SessionRepository;
 import com.proy.ms_security.Repositories.UserRepository;
-import com.proy.ms_security.Services.EncryptionService;
-import com.proy.ms_security.Services.JwtService;
-import com.proy.ms_security.Services.NotificationService;
-import com.proy.ms_security.Services.TwoFactorAuthService;
+import com.proy.ms_security.Services.*;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.PageRequest;
@@ -45,6 +40,9 @@ public class SecurityController {
 
    @Autowired
    private SessionRepository sessionRepository;
+
+   @Autowired
+   private PasswordGeneratorService passwordGeneratorService;
 
    @PostMapping("/login")
    public ResponseEntity<?> login(@RequestBody User theNewUser) {
@@ -240,4 +238,163 @@ public class SecurityController {
                  .body("Error al verificar la sesión: " + e.getMessage());
       }
    }
+
+   @PostMapping("/change-password")
+   public ResponseEntity<?> changePassword(@RequestBody PasswordChangeRequest request,
+                                           @RequestHeader("Authorization") String authHeader) {
+      try {
+         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body("Usuario no autenticado");
+         }
+
+         User user = theUserRepository.getUserByEmail(request.getEmail());
+         if (user == null) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body("Usuario no encontrado");
+         }
+
+         // Verificar contraseña actual
+         String currentEncryptedPassword = theEncryptionService.convertSHA256(request.getCurrentPassword());
+         if (!user.getPassword().equals(currentEncryptedPassword)) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body("La contraseña actual es incorrecta");
+         }
+
+
+
+         // Actualizar contraseña
+         user.setPassword(theEncryptionService.convertSHA256(request.getNewPassword()));
+         theUserRepository.save(user);
+
+         // Enviar notificación
+         String correo = user.getEmail();
+         String subject = "Cambio de contraseña exitoso";
+         String bodyHtml = "<html>\n" +
+                 "  <body style=\"font-family: Arial, sans-serif; background-color: #f4f4f4; margin: 0; padding: 20px;\">\n" +
+                 "    <div style=\"max-width: 600px; margin: 0 auto; background-color: #ffffff; padding: 20px; border-radius: 8px; box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);\">\n" +
+                 "      <!-- Header -->\n" +
+                 "      <h1 style=\"color: #1a73e8; text-align: center; font-size: 28px; margin-bottom: 10px;\">¡Bienvenido a JEC Logistic & Transport, <strong>"+ user.getName() + "</strong>!</h1>\n" +
+                 "\n" +
+                 "      <!-- Body -->\n" +
+                 "      <p style=\"color: #555; font-size: 16px; text-align: center; line-height: 1.5;\">\n" +
+                 "        Gracias por registrarte en <strong>JEC Logistic & Transport</strong>. Nos complace informarte que tu cuenta ha sido creada exitosamente.\n" +
+                 "      </p>\n" +
+                 "      <p style=\"color: #555; font-size: 16px; text-align: center;\">\n" +
+                 "        A continuación, te proporcionamos tu contraseña temporal para que puedas acceder a tu cuenta:\n" +
+                 "      </p>\n" +
+                 "\n" +
+                 "      <!-- Password Box -->\n" +
+                 "      <div style=\"text-align: center; margin: 20px 0;\">\n" +
+                 "        <h2 style=\"color: #34a853; font-size: 24px; background-color: #f0f4ff; padding: 10px 0; border-radius: 8px; display: inline-block; width: 100%; box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.1);\"> "+ "Tu contraseña ha sido cambiada exitosamente. Si no realizaste este cambio, contacta con soporte." +"</h2>\n" +
+                 "      </div>\n" +
+                 "\n" +
+                 "      <!-- Instructions -->\n" +
+                 "      <p style=\"color: #555; font-size: 16px; text-align: center;\">\n" +
+                 "        Te recomendamos <strong>cambiar tu contraseña</strong> tan pronto como sea posible para asegurar tu cuenta.\n" +
+                 "      </p>\n" +
+                 "      <p style=\"color: #555; font-size: 16px; text-align: center;\">\n" +
+                 "        Si no has solicitado esta cuenta, por favor, ignora este correo.\n" +
+                 "      </p>\n" +
+                 "\n" +
+                 "      <!-- Footer -->\n" +
+                 "      <br/>\n" +
+                 "      <p style=\"color: #888; font-size: 14px; text-align: center;\">\n" +
+                 "        Saludos cordiales,<br/>\n" +
+                 "        <strong>El equipo de soporte de JEC Logistic & Transport</strong>\n" +
+                 "      </p>\n" +
+                 "    </div>\n" +
+                 "\n" +
+                 "    <!-- Footer note -->\n" +
+                 "    <div style=\"text-align: center; margin-top: 20px;\">\n" +
+                 "      <p style=\"color: #999; font-size: 12px;\">© 2024 JEC Logistic & Transport. Todos los derechos reservados.</p>\n" +
+                 "    </div>\n" +
+                 "  </body>\n" +
+                 "</html>\n";
+         this.notificationService.sendEmail(subject,correo,bodyHtml);
+
+         return ResponseEntity.ok()
+                 .body(new HashMap<String, String>() {{
+                    put("message", "Contraseña actualizada exitosamente");
+                    put("timestamp", LocalDateTime.now().toString());
+                 }});
+
+      } catch (Exception e) {
+         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                 .body("Error al cambiar la contraseña: " + e.getMessage());
+      }
+   }
+
+   // Recuperar contraseña (cuando el usuario no está logueado)
+   @PostMapping("/forgot-password")
+   public ResponseEntity<?> forgotPassword(@RequestBody ForgotPasswordRequest request) {
+      try {
+         User user = theUserRepository.getUserByEmail(request.getEmail());
+         if (user == null) {
+            // Por seguridad, no revelamos si el email existe o no
+            return ResponseEntity.ok()
+                    .body("Si el correo existe en nuestro sistema, recibirás instrucciones para restablecer tu contraseña");
+         }
+
+         // Generar nueva contraseña
+         String newPassword = passwordGeneratorService.generateRandomPassword(12);
+         user.setPassword(theEncryptionService.convertSHA256(newPassword));
+         theUserRepository.save(user);
+
+         // Enviar nueva contraseña por correo
+         String correo = user.getEmail();
+         String subject = "Recuperación de contraseña";
+         String bodyHtml = "<html>\n" +
+                 "  <body style=\"font-family: Arial, sans-serif; background-color: #f4f4f4; margin: 0; padding: 20px;\">\n" +
+                 "    <div style=\"max-width: 600px; margin: 0 auto; background-color: #ffffff; padding: 20px; border-radius: 8px; box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);\">\n" +
+                 "      <!-- Header -->\n" +
+                 "      <h1 style=\"color: #1a73e8; text-align: center; font-size: 28px; margin-bottom: 10px;\">¡Bienvenido a JEC Logistic & Transport, <strong>"+ user.getName() + "</strong>!</h1>\n" +
+                 "\n" +
+                 "      <!-- Body -->\n" +
+                 "      <p style=\"color: #555; font-size: 16px; text-align: center; line-height: 1.5;\">\n" +
+                 "        Gracias por registrarte en <strong>JEC Logistic & Transport</strong>. Nos complace informarte que tu cuenta ha sido creada exitosamente.\n" +
+                 "      </p>\n" +
+                 "      <p style=\"color: #555; font-size: 16px; text-align: center;\">\n" +
+                 "        A continuación, te proporcionamos tu contraseña temporal para que puedas acceder a tu cuenta:\n" +
+                 "      </p>\n" +
+                 "\n" +
+                 "      <!-- Password Box -->\n" +
+                 "      <div style=\"text-align: center; margin: 20px 0;\">\n" +
+                 "        <h2 style=\"color: #34a853; font-size: 24px; background-color: #f0f4ff; padding: 10px 0; border-radius: 8px; display: inline-block; width: 100%; box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.1);\"> "+   newPassword +
+                  "</h2>\n" +
+                 "      </div>\n" +
+                 "\n" +
+                 "      <!-- Instructions -->\n" +
+                 "      <p style=\"color: #555; font-size: 16px; text-align: center;\">\n" +
+                 "        Te recomendamos <strong>cambiar tu contraseña</strong> tan pronto como sea posible para asegurar tu cuenta.\n" +
+                 "      </p>\n" +
+                 "      <p style=\"color: #555; font-size: 16px; text-align: center;\">\n" +
+                 "        Si no has solicitado esta cuenta, por favor, ignora este correo.\n" +
+                 "      </p>\n" +
+                 "\n" +
+                 "      <!-- Footer -->\n" +
+                 "      <br/>\n" +
+                 "      <p style=\"color: #888; font-size: 14px; text-align: center;\">\n" +
+                 "        Saludos cordiales,<br/>\n" +
+                 "        <strong>El equipo de soporte de JEC Logistic & Transport</strong>\n" +
+                 "      </p>\n" +
+                 "    </div>\n" +
+                 "\n" +
+                 "    <!-- Footer note -->\n" +
+                 "    <div style=\"text-align: center; margin-top: 20px;\">\n" +
+                 "      <p style=\"color: #999; font-size: 12px;\">© 2024 JEC Logistic & Transport. Todos los derechos reservados.</p>\n" +
+                 "    </div>\n" +
+                 "  </body>\n" +
+                 "</html>\n";
+         this.notificationService.sendEmail(subject,correo,bodyHtml);
+
+         return ResponseEntity.ok()
+                 .body("Si el correo existe en nuestro sistema, recibirás instrucciones para restablecer tu contraseña");
+
+      } catch (Exception e) {
+         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                 .body("Error en el proceso de recuperación de contraseña");
+      }
+   }
+
 }

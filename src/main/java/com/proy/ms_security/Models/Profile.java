@@ -18,6 +18,8 @@ public class Profile {
         this.photo = photo;
     }
 
+    public Profile(){}
+
     public String getId() {
         return id;
     }

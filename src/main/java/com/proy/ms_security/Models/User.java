@@ -3,6 +3,7 @@ package com.proy.ms_security.Models;
 
 import lombok.Data;
 import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.mapping.DBRef;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 @Data
@@ -13,6 +14,8 @@ public class User {
     private String name;
     private String email;
     private String password;
+    @DBRef
+    private Profile profile;
 
     public User(String name, String email, String password) {
         this.name = name;
