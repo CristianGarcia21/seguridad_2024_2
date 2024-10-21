@@ -53,50 +53,9 @@ public class SecurityController {
 
          // Generar código 2FA
          int code2fa = Integer.parseInt(this.twoFactorAuthService.generate2FACode());
-         String correo = theActualUser.getEmail();
-         String subject = "Codigo 2FA";
-         String bodyHtml = "<html>\n" +
-                 "  <body style=\"font-family: Arial, sans-serif; background-color: #f4f4f4; margin: 0; padding: 20px;\">\n" +
-                 "    <div style=\"max-width: 600px; margin: 0 auto; background-color: #ffffff; padding: 20px; border-radius: 8px; box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);\">\n" +
-                 "      <!-- Header -->\n" +
-                 "      <h1 style=\"color: #1a73e8; text-align: center; font-size: 28px; margin-bottom: 10px;\">¡Bienvenido a JEC Logistic & Transport, <strong>"+ theActualUser.getName() + "</strong>!</h1>\n" +
-                 "\n" +
-                 "      <!-- Body -->\n" +
-                 "      <p style=\"color: #555; font-size: 16px; text-align: center; line-height: 1.5;\">\n" +
-                 "        Gracias por registrarte en <strong>JEC Logistic & Transport</strong>. Nos complace informarte que tu cuenta ha sido creada exitosamente.\n" +
-                 "      </p>\n" +
-                 "      <p style=\"color: #555; font-size: 16px; text-align: center;\">\n" +
-                 "        A continuación, te proporcionamos tu contraseña temporal para que puedas acceder a tu cuenta:\n" +
-                 "      </p>\n" +
-                 "\n" +
-                 "      <!-- Password Box -->\n" +
-                 "      <div style=\"text-align: center; margin: 20px 0;\">\n" +
-                 "        <h2 style=\"color: #34a853; font-size: 24px; background-color: #f0f4ff; padding: 10px 0; border-radius: 8px; display: inline-block; width: 100%; box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.1);\"> "+code2fa +"</h2>\n" +
-                 "      </div>\n" +
-                 "\n" +
-                 "      <!-- Instructions -->\n" +
-                 "      <p style=\"color: #555; font-size: 16px; text-align: center;\">\n" +
-                 "        Te recomendamos <strong>cambiar tu contraseña</strong> tan pronto como sea posible para asegurar tu cuenta.\n" +
-                 "      </p>\n" +
-                 "      <p style=\"color: #555; font-size: 16px; text-align: center;\">\n" +
-                 "        Si no has solicitado esta cuenta, por favor, ignora este correo.\n" +
-                 "      </p>\n" +
-                 "\n" +
-                 "      <!-- Footer -->\n" +
-                 "      <br/>\n" +
-                 "      <p style=\"color: #888; font-size: 14px; text-align: center;\">\n" +
-                 "        Saludos cordiales,<br/>\n" +
-                 "        <strong>El equipo de soporte de JEC Logistic & Transport</strong>\n" +
-                 "      </p>\n" +
-                 "    </div>\n" +
-                 "\n" +
-                 "    <!-- Footer note -->\n" +
-                 "    <div style=\"text-align: center; margin-top: 20px;\">\n" +
-                 "      <p style=\"color: #999; font-size: 12px;\">© 2024 JEC Logistic & Transport. Todos los derechos reservados.</p>\n" +
-                 "    </div>\n" +
-                 "  </body>\n" +
-                 "</html>\n";
-         this.notificationService.sendEmail(subject,correo,bodyHtml);
+
+         String message = "Su codigo de autenticacion es: " + code2fa;
+         this.notificationService.sendTelegramMessage(message);
 
          // Crear nueva sesión
          Session session = new Session();
@@ -150,6 +109,7 @@ public class SecurityController {
             session.setUsado(true);
             session.setEndAt(LocalDateTime.now());
             sessionRepository.save(session);
+
 
             return ResponseEntity.ok(token);
          }

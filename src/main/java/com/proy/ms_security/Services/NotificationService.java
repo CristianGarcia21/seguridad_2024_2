@@ -20,6 +20,9 @@ public class NotificationService {
     @Value("${notification.service.url}")
     private String emailServiceUrl;
 
+    @Value("${notification.service.url.telegram}")
+    private String telegramServiceUrl;
+
     public void sendEmail(String subject, String recipient, String bodyHtml) {
 
         Map<String, String> requestBody = new HashMap<>();
@@ -42,6 +45,25 @@ public class NotificationService {
             System.out.println("Correo enviado exitosamente.");
         } else {
             System.out.println("Error al enviar el correo: " + response.getStatusCode());
+        }
+    }
+    // Método para enviar mensajes a Telegram
+    public void sendTelegramMessage(String message) {
+
+        Map<String, String> requestBody = new HashMap<>();
+        requestBody.put("message", message);
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+
+        HttpEntity<Map<String, String>> request = new HttpEntity<>(requestBody, headers);
+
+        ResponseEntity<String> response = restTemplate.exchange(telegramServiceUrl, HttpMethod.POST, request, String.class);
+
+        if (response.getStatusCode().is2xxSuccessful()) {
+            System.out.println("Mensaje enviado exitosamente a Telegram.");
+        } else {
+            System.out.println("Error al enviar el mensaje a Telegram: " + response.getStatusCode());
         }
     }
 }
