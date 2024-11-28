@@ -4,6 +4,7 @@ import com.proy.ms_security.Models.*;
 import com.proy.ms_security.Repositories.SessionRepository;
 import com.proy.ms_security.Repositories.UserRepository;
 import com.proy.ms_security.Services.*;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.PageRequest;
@@ -43,6 +44,9 @@ public class SecurityController {
 
    @Autowired
    private PasswordGeneratorService passwordGeneratorService;
+
+   @Autowired
+   private  ValidatorsService theValidatorsService;
 
    @PostMapping("/login")
    public ResponseEntity<?> login(@RequestBody User theNewUser) {
@@ -355,6 +359,13 @@ public class SecurityController {
          return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                  .body("Error en el proceso de recuperación de contraseña");
       }
+   }
+
+   @PostMapping("/permissions-validation")
+   public boolean permissionsValidation(final HttpServletRequest request,
+                                        @RequestBody Permission thePermission) {
+      boolean success=this.theValidatorsService.validationRolePermission(request,thePermission.getUrl(),thePermission.getMethod());
+      return success;
    }
 
 }

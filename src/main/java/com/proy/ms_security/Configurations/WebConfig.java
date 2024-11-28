@@ -20,5 +20,7 @@ public class WebConfig implements WebMvcConfigurer {
                 .excludePathPatterns("/api/public/**");
 
 
+
     }
+
 }
