@@ -51,12 +51,10 @@ public class SecurityController {
    @PostMapping("/login")
    public ResponseEntity<?> login(@RequestBody User theNewUser) {
       User theActualUser = this.theUserRepository.getUserByEmail(theNewUser.getEmail());
-      HashMap<String, Object> theResponse=new HashMap<>();
 
 
       if (theActualUser != null &&
               theActualUser.getPassword().equals(theEncryptionService.convertSHA256(theNewUser.getPassword()))) {
-         theResponse.put("user", theActualUser);
          // Generar código 2FA
          int code2fa = Integer.parseInt(this.twoFactorAuthService.generate2FACode());
 
@@ -87,13 +85,14 @@ public class SecurityController {
 
    @PostMapping("/verify-2fa")
    public ResponseEntity<?> verify2FA(@RequestBody VerificationRequest request) {
+      HashMap<String, Object> theResponse=new HashMap<>();
       try {
          User user = theUserRepository.getUserByEmail(request.getEmail());
          if (user == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Usuario no encontrado");
          }
 
-         // Usando el nuevo método más simple
+         // Usando el nuevo metodo más simple
          Optional<Session> sessionOpt = sessionRepository.findFirstByUserAndUsadoFalseOrderByStartAtDesc(user);
 
          if (sessionOpt.isEmpty()) {
@@ -115,9 +114,9 @@ public class SecurityController {
             session.setUsado(true);
             session.setEndAt(LocalDateTime.now());
             sessionRepository.save(session);
-
-
-            return ResponseEntity.ok(token);
+            theResponse.put("token", token);
+            theResponse.put("user", user);
+            return ResponseEntity.ok(theResponse);
          }
 
          session.setFallido(true);
