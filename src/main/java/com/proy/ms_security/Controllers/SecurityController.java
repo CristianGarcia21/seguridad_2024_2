@@ -51,10 +51,12 @@ public class SecurityController {
    @PostMapping("/login")
    public ResponseEntity<?> login(@RequestBody User theNewUser) {
       User theActualUser = this.theUserRepository.getUserByEmail(theNewUser.getEmail());
+      HashMap<String, Object> theResponse=new HashMap<>();
+
 
       if (theActualUser != null &&
               theActualUser.getPassword().equals(theEncryptionService.convertSHA256(theNewUser.getPassword()))) {
-
+         theResponse.put("user", theActualUser);
          // Generar código 2FA
          int code2fa = Integer.parseInt(this.twoFactorAuthService.generate2FACode());
 
