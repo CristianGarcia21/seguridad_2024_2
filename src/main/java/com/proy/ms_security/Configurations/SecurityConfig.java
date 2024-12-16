@@ -42,7 +42,8 @@ public class SecurityConfig {
                                 new AntPathRequestMatcher("/api/permissions/**"),
                                 new AntPathRequestMatcher("/api/role-permission/**"),
                                 new AntPathRequestMatcher("/api/user_role/**"),
-                                new AntPathRequestMatcher("/api/public/security/**")
+                                new AntPathRequestMatcher("/api/public/security/**"),
+                                new AntPathRequestMatcher("/api/public/users/**")
                         ).permitAll()
                         .anyRequest().authenticated()
                 )

@@ -52,35 +52,40 @@ public class SecurityController {
    public ResponseEntity<?> login(@RequestBody User theNewUser) {
       User theActualUser = this.theUserRepository.getUserByEmail(theNewUser.getEmail());
 
+      try{
+         if (theActualUser != null &&
+                 theActualUser.getPassword().equals(theEncryptionService.convertSHA256(theNewUser.getPassword()))) {
+            // Generar código 2FA
+            int code2fa = Integer.parseInt(this.twoFactorAuthService.generate2FACode());
 
-      if (theActualUser != null &&
-              theActualUser.getPassword().equals(theEncryptionService.convertSHA256(theNewUser.getPassword()))) {
-         // Generar código 2FA
-         int code2fa = Integer.parseInt(this.twoFactorAuthService.generate2FACode());
+            String message = "Su codigo de autenticacion es: " + code2fa;
+            this.notificationService.sendTelegramMessage(message);
 
-         String message = "Su codigo de autenticacion es: " + code2fa;
-         this.notificationService.sendTelegramMessage(message);
+            // Crear nueva sesión
+            Session session = new Session();
+            session.setToken2Fa(code2fa);
+            session.setUsado(false);
+            session.setFallido(false);
+            session.setStartAt(LocalDateTime.now());
+            session.setExpiration(LocalDateTime.now().plusMinutes(5)); // El código 2FA expira en 5 minutos
+            session.setUser(theActualUser);
 
-         // Crear nueva sesión
-         Session session = new Session();
-         session.setToken2Fa(code2fa);
-         session.setUsado(false);
-         session.setFallido(false);
-         session.setStartAt(LocalDateTime.now());
-         session.setExpiration(LocalDateTime.now().plusMinutes(5)); // El código 2FA expira en 5 minutos
-         session.setUser(theActualUser);
+            sessionRepository.save(session);
 
-         sessionRepository.save(session);
+            Map<String, Object> response = new HashMap<>();
+            response.put("message", "Por favor verifica el código 2FA enviado");
+            response.put("email", theActualUser.getEmail());
+            response.put("code2fa", code2fa);
 
-         Map<String, Object> response = new HashMap<>();
-         response.put("message", "Por favor verifica el código 2FA enviado");
-         response.put("email", theActualUser.getEmail());
-         response.put("code2fa", code2fa);
-
-         return ResponseEntity.ok(response);
+            return ResponseEntity.ok(response);
+         } else {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Credenciales inválidas");
+         }
+      } catch (Exception e){
+         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                 .body("Error en la autenticación: " + e.getMessage());
       }
 
-      return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Credenciales inválidas");
    }
 
    @PostMapping("/verify-2fa")
@@ -166,7 +171,7 @@ public class SecurityController {
       }
    }
 
-   // Método adicional para verificar si una sesión está activa
+   // Metodo adicional para verificar si una sesión está activa
    @GetMapping("/check-session")
    public ResponseEntity<?> checkSession(@RequestHeader("Authorization") String authHeader) {
       try {
