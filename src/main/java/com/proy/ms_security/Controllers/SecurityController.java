@@ -3,6 +3,7 @@ package com.proy.ms_security.Controllers;
 import com.proy.ms_security.Models.*;
 import com.proy.ms_security.Repositories.SessionRepository;
 import com.proy.ms_security.Repositories.UserRepository;
+import com.proy.ms_security.Repositories.UserRoleRepository;
 import com.proy.ms_security.Services.*;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -48,6 +49,9 @@ public class SecurityController {
    @Autowired
    private  ValidatorsService theValidatorsService;
 
+   @Autowired
+   private UserRoleRepository theUserRoleRepository;
+
    @PostMapping("/login")
    public ResponseEntity<?> login(@RequestBody User theNewUser) {
       User theActualUser = this.theUserRepository.getUserByEmail(theNewUser.getEmail());
@@ -60,6 +64,8 @@ public class SecurityController {
 
          String message = "Su codigo de autenticacion es: " + code2fa;
          this.notificationService.sendTelegramMessage(message);
+
+
 
          // Crear nueva sesión
          Session session = new Session();
@@ -114,8 +120,17 @@ public class SecurityController {
             session.setEndAt(LocalDateTime.now());
             sessionRepository.save(session);
 
+            List<UserRole> roles = theUserRoleRepository.getRolesByUser(user.get_id());
+            String userRole = roles.isEmpty() ? "ROLE_USER" : roles.get(0).getRole().getName();
 
-            return ResponseEntity.ok(token);
+            Map<String, Object> userResponse = new HashMap<>();
+            userResponse.put("_id", user.get_id());
+            userResponse.put("name", user.getName());
+            userResponse.put("email", user.getEmail());
+            userResponse.put("password", "");
+            userResponse.put("token", token);
+            userResponse.put("role", userRole);
+            return ResponseEntity.ok(userResponse);
          }
 
          session.setFallido(true);

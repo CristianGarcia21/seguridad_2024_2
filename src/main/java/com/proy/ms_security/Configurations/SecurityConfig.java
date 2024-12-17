@@ -35,7 +35,7 @@ public class SecurityConfig {
                                 new AntPathRequestMatcher("/"),
                                 new AntPathRequestMatcher("/github/callback"),
                                 new AntPathRequestMatcher("/error"),
-                                new AntPathRequestMatcher("/api/users/**"),
+                                new AntPathRequestMatcher("/api/public/users/**"),
                                 new AntPathRequestMatcher("/api/sessions/**"),
                                 new AntPathRequestMatcher("/api/role/**"),
                                 new AntPathRequestMatcher("/api/profiles/**"),
