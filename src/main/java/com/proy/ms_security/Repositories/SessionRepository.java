@@ -19,7 +19,7 @@ public interface SessionRepository extends MongoRepository<Session, String> {
     Optional<Session> findByToken(String token);
 
     // Buscar la última sesión no usada de un usuario específico
-    // Método más simple y seguro
+    // Metodo más simple y seguro
     Optional<Session> findFirstByUserAndUsadoFalseOrderByStartAtDesc(User user);
 
     // Buscar sesiones activas (no expiradas y no usadas)

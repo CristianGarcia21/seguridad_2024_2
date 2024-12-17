@@ -10,6 +10,7 @@ import com.proy.ms_security.Services.NotificationService;
 import com.proy.ms_security.Services.PasswordGeneratorService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.oauth2.core.OAuth2AccessToken;
 import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken;
@@ -17,7 +18,7 @@ import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.view.RedirectView;
-import org.springframework.beans.factory.annotation.Autowired;
+
 
 import java.time.LocalDateTime;
 import java.util.HashMap;
@@ -45,7 +46,6 @@ public class GitHubLoginController {
 
     @Autowired
     private NotificationService notificationService;
-
     @GetMapping("/login/github")
     public RedirectView redirectToGitHub() {
         return new RedirectView("/oauth2/authorization/github");
